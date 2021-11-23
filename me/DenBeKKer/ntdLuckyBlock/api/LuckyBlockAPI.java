@@ -57,68 +57,7 @@ public class LuckyBlockAPI {
 	 * @param path Config path
 	 * @return LuckyEntry from config path
 	 */
-	public static LuckyEntry loadDropEntry(Config loaded, String path) {
-		
-		if(loaded == null) throw new NullPointerException("Config is unloaded");
-		
-		if(loaded.get().isSet(path + ".items")) {
-			
-			if(!LBMain.isPremium()) {
-				LBMain.log(Level.SEVERE, "Configuration path " + loaded.getName() + "/" + path
-					+ " was converted to JSON format. Free version supports only legacy formats");
-				return new LuckyEntry(DropChance.MEDIUM, new ItemDrop(new ItemStack(Material.STONE)));
-			}
-			
-			String ch = loaded.get().getString(path + ".chance");
-			DropChance chance = DropChance.MEDIUM;
-			try {
-				chance = DropChance.valueOf(ch);
-			} catch(Exception ex) {
-				LBMain.log(Level.WARNING, "Drop chance \""
-						+ (ch == null ? "null" : ch) + "\" is unsupported (" + loaded.getName() + ", " + path + ".chance)");
-			}
-			LuckyEntry entry = new LuckyEntry(chance);
-			for(String drop0 : loaded.get().getConfigurationSection(path + ".items").getKeys(false)) {
-				
-				try {
-					LuckyDrop drop = JSON.load(loaded, path + ".items." + drop0);
-					if(drop != null)
-						entry.add(drop);
-				} catch(Throwable th) {
-					
-					if(th instanceof ClassNotFoundException) {
-						LBMain.log(Level.WARNING, th.getLocalizedMessage());
-					}
-					
-					if(LBMain.isDebug())
-						th.printStackTrace();
-					
-				}
-				
-			}
-			return entry;
-			
-		}
-		
-		if(loaded.get().isSet(path)) {
-			
-			List<String> list = loaded.get().getStringList(path);
-			LuckyEntry entry = new LuckyEntry();
-			for(String drop0 : list) {
-				
-				LuckyDrop drop = LEGACY.load(drop0);
-				if(drop != null)
-					entry.add(drop);
-				
-			}
-			LBMain.getConvertManager().add(loaded, path);
-			return entry;
-			
-		}
-		
-		return null;
-		
-	}
+	public static LuckyEntry loadDropEntry(Config loaded, String path) { }
 	
 	/**
 	 * 
@@ -237,23 +176,7 @@ public class LuckyBlockAPI {
 	 * @param check_tag Check tag
 	 * @return LuckyBlockType from item if item is LuckyBlock and null if not
 	 */
-	public static LuckyBlockType parseLuckyBlock(ItemStack stack, boolean check_uuid, boolean check_tag) {
-		
-		UUID uuid = null;
-		if(check_uuid) {
-			uuid = LBMain.getUUID(stack);
-			if(uuid == null) return null;
-		}
-		
-		if(check_tag) {
-			
-			final String type = CustomItemFactory.parseValue(stack, CustomItemFactory.TAG_LUCKYBLOCK_TYPE);
-			final LuckyBlockType parsed = LuckyBlockType.parse(type);
-			return parsed == null || uuid == null || parsed.getUUID().equals(uuid) ? parsed : null;
-			
-		} else return LuckyBlockType.parse(uuid);
-		
-	}
+	public static LuckyBlockType parseLuckyBlock(ItemStack stack, boolean check_uuid, boolean check_tag) { }
 	
 	/**
 	 * 
@@ -293,68 +216,14 @@ public class LuckyBlockAPI {
 		
 	}
 	
-	public static LuckyBlockType parseOldLuckyBlock(ItemStack stack) {
-		
-		UUID uuid = LBMain.getUUID(stack);
-		if(uuid == null) return null;
-		if(CustomItemFactory.parseValue(stack, CustomItemFactory.TAG_LUCKYBLOCK_TYPE) != null) return null;
-		
-		LuckyBlockType type = LuckyBlockType.parse(uuid);
-		if(type == null) {
-			
-			for(Map.Entry<LuckyBlockType, LuckyBlock> loaded : LuckyBlockType.map().entrySet()) {
-				
-				if(stack.getItemMeta().getDisplayName().equalsIgnoreCase(loaded.getValue().getOldName())) {
-					
-					type = loaded.getKey();
-					break;
-					
-				}
-				
-			}
-			
-		}
-		return type;
-		
-	}
+	public static LuckyBlockType parseOldLuckyBlock(ItemStack stack) { }
 	
 	/**
 	 * 
 	 * @param b Block to be checked
 	 * @return Check if block is LuckyBlock
 	 */
-	public static boolean isLuckyBlock(Block b) {
-		
-		if(b.getType().name().toUpperCase().contains("STAINED_GLASS") ||
-				b.getType().name().equalsIgnoreCase("TINTED_GLASS") || b.getType() == Material.ICE) {
-			
-			for(LuckyBlockType type : LuckyBlockType.values()) {
-				
-				//if(e.getBlock().getType() == type.getMaterial()) {
-					
-					for(Entity en : b.getWorld().getNearbyEntities(b.getLocation().add(0.5, -1.2, 0.5), 0.1, 0.1, 0.1)) {
-						
-						if(en.getType() != EntityType.ARMOR_STAND) continue;
-						ArmorStand stand = (ArmorStand) en;
-						if(stand.getCustomName() == null) continue;
-						if(stand.getCustomName().equalsIgnoreCase(type.name() + ";" + (int)stand.getLocation().getX()
-								+ ";" + (int)stand.getLocation().getY() + ";" + (int)stand.getLocation().getZ())
-								&& stand.getLocation().add(0, 1.2, 0).getBlock().equals(b)) {
-							
-							return true;
-							
-						}
-						
-					}
-					
-				//}
-				
-			}
-			
-		}
-		return false;
-		
-	}
+	public static boolean isLuckyBlock(Block b) { }
 	
 	/**
 	 * 
@@ -370,43 +239,7 @@ public class LuckyBlockAPI {
 	 * @param b Block to break
 	 * @param ignore Ignore cancellable
 	 */
-	public static void breakLuckyBlock0(Block b, boolean ignore) {
-		
-		if(b.getType().name().toUpperCase().contains("STAINED_GLASS") ||
-				b.getType().name().equalsIgnoreCase("TINTED_GLASS") || b.getType() == Material.ICE) {
-			
-			for(LuckyBlockType type : LuckyBlockType.values()) {
-				
-				for(Entity en : b.getWorld().getNearbyEntities(b.getLocation().add(0.5, -1.2, 0.5), 0.1, 0.1, 0.1)) {
-					
-					if(en.getType() != EntityType.ARMOR_STAND) continue;
-					ArmorStand stand = (ArmorStand) en;
-					if(stand.getCustomName() == null) continue;
-					if(stand.getCustomName().equalsIgnoreCase(type.name() + ";" + (int)stand.getLocation().getX()
-							+ ";" + (int)stand.getLocation().getY() + ";" + (int)stand.getLocation().getZ())
-							&& stand.getLocation().add(0, 1.2, 0).getBlock().equals(b)) {
-						
-						if(type.isLoaded()) {
-							if(LuckyBlockType.map().get(type).tryOpen(b, ignore)) {
-								stand.remove();
-								b.setType(Material.AIR);
-							}
-						} else {
-							stand.remove();
-							b.setType(Material.AIR);
-						}
-						
-						return;
-						
-					}
-					
-				}
-				
-			}
-			
-		}
-		
-	}
+	public static void breakLuckyBlock0(Block b, boolean ignore) { }
 	
 	/**
 	 * 
@@ -429,52 +262,7 @@ public class LuckyBlockAPI {
 	 * @param drop Drop items (IF DROP FALSE PLAYER MAY BE NULL)
 	 * @param ignore Ignore cancellable
 	 */
-	public static void breakLuckyBlock(Block b, Player p, boolean drop, boolean ignore) {
-		
-		if(b.getType().name().toUpperCase().contains("STAINED_GLASS") ||
-				b.getType().name().equalsIgnoreCase("TINTED_GLASS") || b.getType() == Material.ICE) {
-			
-			for(LuckyBlockType type : LuckyBlockType.values()) {
-				
-				for(Entity en : b.getWorld().getNearbyEntities(b.getLocation().add(0.5, -1.2, 0.5), 0.1, 0.1, 0.1)) {
-					
-					if(en.getType() != EntityType.ARMOR_STAND) continue;
-					ArmorStand stand = (ArmorStand) en;
-					if(stand.getCustomName() == null) continue;
-					if(stand.getCustomName().equalsIgnoreCase(type.name() + ";" + (int)stand.getLocation().getX()
-							+ ";" + (int)stand.getLocation().getY() + ";" + (int)stand.getLocation().getZ())
-							&& stand.getLocation().add(0, 1.2, 0).getBlock().equals(b)) {
-						
-						if(drop) {
-							if(type.isLoaded()) {
-								if(p == null) {
-									throw new NullPointerException(
-											"You must provide player for breakLuckyBlock(Block, Player, boolean) or use breakLuckyBlock0(Block)");
-								}
-								if(LuckyBlockType.map().get(type).tryOpen(b, p, ignore)) {
-									stand.remove();
-									b.setType(Material.AIR);
-								}
-							} else {
-								stand.remove();
-								b.setType(Material.AIR);
-							}
-						} else {
-							stand.remove();
-							b.setType(Material.AIR);
-						}
-						
-						return;
-						
-					}
-					
-				}
-				
-			}
-			
-		}
-		
-	}
+	public static void breakLuckyBlock(Block b, Player p, boolean drop, boolean ignore) { }
 	
 	/**
 	 * Change {@link LuckyBlockType#map()} element to null
